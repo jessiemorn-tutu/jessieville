@@ -1,0 +1,14 @@
+---
+import { href, dateLabel, groupLabel } from '../lib/site';
+const { post, index } = Astro.props;
+---
+<article class="post-row" data-post-row data-group={post.data.group} data-search={`${post.data.title} ${post.data.description} ${post.data.categories.join(' ')} ${post.data.tags.join(' ')}`.toLowerCase()}>
+  {index !== undefined && <span class="row-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>}
+  <div class="row-body">
+    <div class="eyebrow"><span>{groupLabel(post.data.group)}</span><span class="meta-dot">·</span><span>{post.data.readingMinutes} min read</span></div>
+    <h3><a href={href(post.data.permalink)}>{post.data.title}</a></h3>
+    <p>{post.data.description}</p>
+  </div>
+  <time datetime={post.data.date.slice(0, 10)}>{dateLabel(post.data.date)}</time>
+  <span class="row-arrow" aria-hidden="true">↗</span>
+</article>

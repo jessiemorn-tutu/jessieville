@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro';
+import PostRow from '../components/PostRow.astro';
+import { allPosts, groups } from '../lib/site';
+const posts = await allPosts();
+const years = posts.map((post) => post.data.date.slice(0, 4));
+---
+<Base title="文章存檔">
+  <section class="archive-page wrap">
+    <div class="page-intro"><span class="eyebrow">THE ARCHIVE · {years.at(-1)} — {years[0]}</span><h1>沿途的文字<span>.</span></h1><p>書裡的世界，螢幕上的故事，還有生活本身。</p></div>
+    <div class="archive-toolbar"><div class="filter-tabs" role="group" aria-label="依主題篩選">{groups.map((group) => <button type="button" data-filter={group.id} aria-pressed={group.id === 'all'}>{group.label}<span>{group.id === 'all' ? posts.length : posts.filter((post) => post.data.group === group.id).length}</span></button>)}</div><label class="search-field"><span aria-hidden="true">⌕</span><input id="post-search" type="search" placeholder="搜尋文章、關鍵字…" aria-label="搜尋文章、分類和標籤" autocomplete="off" /></label></div>
+    <p class="results-count" role="status" aria-live="polite">共 <span id="result-count">{posts.length}</span> 篇文章</p>
+    <div class="post-list">{posts.map((post) => <PostRow post={post} />)}</div>
+    <div id="empty-results" class="empty-results" hidden><h2>還沒有找到這樣的文字。</h2><p>換一個關鍵字，或看看其他主題。</p><button type="button" id="clear-search" class="text-link">重設篩選 ↗</button></div>
+    <noscript><p class="muted">所有文章都在下方；啟用 JavaScript 後可以使用搜尋與篩選。</p></noscript>
+  </section>
+  <script>
+    const rows = [...document.querySelectorAll<HTMLElement>('[data-post-row]')];
+    const filters = [...document.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+    const input = document.querySelector<HTMLInputElement>('#post-search')!;
+    const count = document.querySelector('#result-count')!;
+    const empty = document.querySelector<HTMLElement>('#empty-results')!;
+    let active = 'all';
+    const update = () => {
+      const query = input.value.trim().toLowerCase();
+      let visible = 0;
+      rows.forEach((row) => {
+        row.hidden = !((active === 'all' || row.dataset.group === active) && row.dataset.search!.includes(query));
+        if (!row.hidden) visible++;
+      });
+      count.textContent = String(visible);
+      empty.hidden = visible > 0;
+      filters.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.filter === active)));
+    };
+    filters.forEach((button) => button.addEventListener('click', () => { active = button.dataset.filter!; update(); }));
+    input.addEventListener('input', update);
+    document.querySelector('#clear-search')!.addEventListener('click', () => { active = 'all'; input.value = ''; update(); input.focus(); });
+  </script>
+</Base>

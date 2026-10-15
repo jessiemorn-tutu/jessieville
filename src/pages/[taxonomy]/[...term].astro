@@ -1,0 +1,26 @@
+---
+import Base from '../../layouts/Base.astro';
+import PostRow from '../../components/PostRow.astro';
+import { allPosts, termSlug, href } from '../../lib/site';
+import terms from '../../../migration/taxonomies.json';
+export async function getStaticPaths() {
+  const posts = await allPosts();
+  const routes = new Map();
+  for (const taxonomy of ['category', 'tag']) {
+    const key = taxonomy === 'category' ? 'categories' : 'tags';
+    const names = [...new Set(posts.flatMap((post) => post.data[key]))];
+    for (const name of names) {
+      const matches = terms.filter((term) => term.taxonomy === taxonomy && term.name === name);
+      const paths = new Set([`${taxonomy}/${termSlug(name)}`, ...matches.map((term) => term.permalink.replace(/^\/|\/$/g, ''))]);
+      for (const route of paths) routes.set(route, { params: { taxonomy, term: route.split('/').slice(1).join('/') }, props: { name, taxonomy, posts: posts.filter((post) => post.data[key].includes(name)) } });
+    }
+  }
+  // Existing WordPress navigation linked to the author's archive.
+  routes.set('author/uncoverimages', { params: { taxonomy: 'author', term: 'uncoverimages' }, props: { name: 'Jessie / uncoverimages', taxonomy: 'author', posts } });
+  return [...routes.values()];
+}
+const { name, posts } = Astro.props;
+---
+<Base title={name}>
+  <section class="archive-page wrap"><a class="back-link" href={href('/archive/')}>← 全部文章</a><div class="page-intro"><h1>{name}<span>.</span><small class="term-heading-count">{posts.length} 篇</small></h1></div><div class="post-list">{posts.map((post) => <PostRow post={post} />)}</div></section>
+</Base>

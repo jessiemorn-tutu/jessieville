@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+import PostRow from '../components/PostRow.astro';
+import { allPosts, href, site, groupLabel, dateLabel, groups } from '../lib/site';
+const posts = await allPosts();
+const latest = posts[0];
+const years = [...new Set(posts.map((post) => post.data.date.slice(0, 4)))];
+---
+<Base>
+  <section class="hero wrap">
+    <div class="hero-topline"><span class="eyebrow">A PERSONAL JOURNAL</span><span class="eyebrow">書寫 · 閱讀 · 觀看 · 生活</span></div>
+    <h1>Jessieville<span class="hero-period">.</span></h1>
+    <div class="hero-bottomline"><p>Like a river that <em>keeps flowing.</em></p><p class="hero-chinese">在閱讀與生活之間，<br />留下一些思考的痕跡。</p></div>
+    <svg class="river-lines" viewBox="0 0 1200 90" fill="none" aria-hidden="true" preserveAspectRatio="none"><path d="M-10 55C190-5 285 118 480 55S780-5 990 55s170 12 230 0" /><path d="M-10 65C190 5 285 128 480 65S780 5 990 65s170 12 230 0" /><path d="M-10 75C190 15 285 138 480 75S780 15 990 75s170 12 230 0" /></svg>
+  </section>
+  <section class="featured wrap" aria-labelledby="featured-heading">
+    <div class="section-label"><h2 id="featured-heading">最新一篇 <span>THE LATEST</span></h2><span class="tiny-label">{dateLabel(latest.data.date)}</span></div>
+    <div class="featured-grid">
+      <a class="featured-image" href={href(latest.data.permalink)} tabindex="-1" aria-hidden="true">{latest.data.cover ? <img src={href(latest.data.cover)} alt="" width="695" height="300" fetchpriority="high" /> : <div class="featured-words">{latest.data.title}</div>}<span class="image-caption">{groups.find((group) => group.id === latest.data.group)?.en.toUpperCase()} / {latest.data.date.slice(0, 4)}</span></a>
+      <div class="featured-copy"><div class="eyebrow"><span>{groupLabel(latest.data.group)}</span><span class="meta-dot">·</span><span>{latest.data.readingMinutes} min read</span></div><h2><a href={href(latest.data.permalink)}>{latest.data.title}</a></h2><p>{latest.data.description}</p><a class="text-link" href={href(latest.data.permalink)}>慢慢讀這一篇 <span aria-hidden="true">↗</span></a></div>
+    </div>
+  </section>
+  <section class="writing wrap" aria-labelledby="writing-heading">
+    <div class="section-label"><h2 id="writing-heading">沿途的文字 <span>MORE WRITING</span></h2><a class="tiny-label archive-link" href={href('/archive/')}>全部 {posts.length} 篇 <span aria-hidden="true">↗</span></a></div>
+    <div class="home-writing-grid"><div class="post-list">{posts.slice(1, 6).map((post, index) => <PostRow post={post} index={index} />)}<a class="all-writing-link" href={href('/archive/')}>走進文章存檔 <span aria-hidden="true">→</span></a></div><aside class="side-note"><span class="eyebrow">A NOTE FROM JESSIE</span><p class="side-note-title">Be creative.<br /><em>Be critical.</em></p><p>讀一本書，看一部電影，<br />也把日常當作值得記下的事。</p><a class="text-link" href={href('/about/')}>關於這裡 <span aria-hidden="true">↗</span></a><div class="side-note-divider"></div><div class="archive-years"><span class="eyebrow">THE ARCHIVE</span><p>{years.at(-1)} — {years[0]}</p><span class="muted">{posts.length} essays & notes</span></div><a class="text-link art-link" href={site.art} target="_blank" rel="noopener noreferrer">另一個房間：藝術 <span aria-hidden="true">↗</span></a></aside></div>
+  </section>
+</Base>

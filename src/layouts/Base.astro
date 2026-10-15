@@ -1,0 +1,50 @@
+---
+import '../styles/global.css';
+import { href, site } from '../lib/site';
+interface Props { title?: string; description?: string; type?: string; image?: string; }
+const { title, description = site.description, type = 'website', image } = Astro.props;
+const pageTitle = title ? `${title} — ${site.name}` : `${site.name} — Like a river that keeps flowing`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const current = Astro.url.pathname.replace(import.meta.env.BASE_URL.replace(/\/$/, ''), '') || '/';
+---
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title || site.name} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content={type} />
+    <meta property="og:url" content={canonical} />
+    {image && <meta property="og:image" content={new URL(href(image), Astro.site)} />}
+    <meta name="theme-color" content="#f7f5ef" />
+    <link rel="icon" type="image/svg+xml" href={href('/favicon.svg')} />
+    <link rel="alternate" type="application/rss+xml" title="Jessieville RSS" href={href('/feed/index.xml')} />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到內容</a>
+    <header class="site-header wrap">
+      <a class="wordmark" href={href('/')} aria-label="Jessieville 首頁">jessieville<span class="brand-dot">.</span></a>
+      <nav aria-label="主要導覽">
+        <a href={href('/archive/')} aria-current={current.startsWith('/archive') ? 'page' : undefined}>文章 <span class="nav-en">Writing</span></a>
+        <a href={href('/about/')} aria-current={current === '/about/' ? 'page' : undefined}>關於 <span class="nav-en">About</span></a>
+        <a href={site.art} target="_blank" rel="noopener noreferrer">藝術 <span class="external-arrow" aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+    <main id="main"><slot /></main>
+    <footer class="site-footer wrap">
+      <div><a class="footer-brand" href={href('/')}>Jessieville.</a><p>Like a river that keeps flowing.</p></div>
+      <div class="footer-links">
+        <a href={href('/contact/')}>Say hello ↗</a>
+        <a href={site.instagram} target="_blank" rel="noopener noreferrer">Instagram ↗</a>
+        <a href={href('/feed/index.xml')}>RSS ↗</a>
+      </div>
+      <small>© {new Date().getFullYear()} Jessie · Words, at my own pace.</small>
+    </footer>
+  </body>
+</html>

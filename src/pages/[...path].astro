@@ -1,0 +1,51 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { allPosts, href, groupLabel, dateLabel, site } from '../lib/site';
+import commentsData from '../../migration/comments.json';
+
+export async function getStaticPaths() {
+  const posts = await allPosts();
+  const pages = await getCollection('pages');
+  return [...posts, ...pages].map((entry) => ({ params: { path: entry.data.permalink.replace(/^\/|\/$/g, '') }, props: { entry } }));
+}
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+const isPost = entry.collection === 'posts';
+const posts = await allPosts();
+const index = posts.findIndex((post) => post.id === entry.id);
+const older = posts[index + 1];
+const newer = posts[index - 1];
+const comments = (commentsData as Record<string, { id: number; author: string; date: string; content: string }[]>)[entry.data.sourceId] || [];
+const toc = headings.filter((heading) => heading.depth >= 2 && heading.depth <= 4);
+const english = /^[A-Za-z“]/.test(entry.data.title);
+---
+<Base title={entry.data.title} description={entry.data.description} type={isPost ? 'article' : 'website'} image={entry.data.cover}>
+  {isPost ? <>
+    <div class="reading-progress" aria-hidden="true"></div>
+    <article class="article-shell" lang={english ? 'en' : 'zh-Hant'}>
+      <a class="back-link" href={href('/archive/')}>← 文章存檔 / ALL WRITING</a>
+      <header class="article-header"><div class="eyebrow">{groupLabel(entry.data.group)}<span class="meta-dot">/</span> {entry.data.categories.join(' · ')}</div><h1>{entry.data.title}</h1><div class="article-meta"><span>BY JESSIE</span><span>·</span><time datetime={entry.data.date.slice(0, 10)}>{dateLabel(entry.data.date)}</time><span>·</span><span>{entry.data.readingMinutes} MIN READ</span></div></header>
+      <div class="article-grid"><div class="prose"><Content /></div><aside class="article-aside">{toc.length > 1 && <details class="toc" open><summary>本文目錄 / IN THIS ESSAY</summary><ol>{toc.map((heading) => <li><a href={`#${heading.slug}`}>{heading.text}</a></li>)}</ol></details>}<span class="eyebrow">JESSIEVILLE</span><p>Like a river that<br />keeps flowing.</p><button type="button" class="share-button">複製文章連結 ↗</button></aside></div>
+      <div class="article-end"><div class="tag-list">{entry.data.tags.map((tag) => <a href={href(`/tag/${tag.toLowerCase().replaceAll('&', '').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '')}/`)}>#{tag}</a>)}</div>
+      {comments.length > 0 && <section class="comments"><h2>原站留言 / CONVERSATION</h2>{comments.map((comment) => <article class="comment"><header>{comment.author}<time datetime={comment.date.slice(0, 10)}>{dateLabel(comment.date)}</time></header><div class="prose" set:html={comment.content} /></article>)}<p class="comment-note">這些留言保留自原站。想聊聊這篇文章？歡迎到 <a href={site.instagram} target="_blank" rel="noopener noreferrer">Instagram ↗</a></p></section>}
+      <nav class="post-navigation" aria-label="相鄰文章">{older ? <a href={href(older.data.permalink)}><span class="eyebrow">← 上一篇 / EARLIER</span>{older.data.title}</a> : <span />}{newer ? <a href={href(newer.data.permalink)}><span class="eyebrow">下一篇 / LATER →</span>{newer.data.title}</a> : <span />}</nav></div>
+    </article>
+  </> : <article class="simple-page"><header class="page-intro"><span class="eyebrow">{entry.data.title === 'About' ? 'A NOTE FROM JESSIE' : 'LET’S TALK'}</span><h1>{entry.data.title === 'About' ? '關於這裡' : 'Say hello'}<span>.</span></h1></header><div class="prose" lang="en"><Content /></div><div class="contact-links"><a href={site.instagram} target="_blank" rel="noopener noreferrer">Instagram ↗</a><a href={site.art} target="_blank" rel="noopener noreferrer">Art & images ↗</a><a href={href('/archive/')}>文章存檔 →</a></div></article>}
+  <script>
+    const details = document.querySelector<HTMLDetailsElement>('.toc');
+    if (details && window.matchMedia('(max-width: 700px)').matches) details.open = false;
+    const progress = document.querySelector<HTMLElement>('.reading-progress');
+    const updateProgress = () => {
+      if (progress) { const total = document.documentElement.scrollHeight - window.innerHeight; progress.style.width = `${total > 0 ? Math.min(100, window.scrollY / total * 100) : 0}%`; }
+    };
+    addEventListener('scroll', updateProgress, { passive: true });
+    addEventListener('resize', updateProgress);
+    updateProgress();
+    document.querySelector('.share-button')?.addEventListener('click', async (event) => {
+      const button = event.currentTarget as HTMLButtonElement;
+      try { await navigator.clipboard.writeText(location.href); button.textContent = '已複製 ✓'; }
+      catch { button.textContent = '請從網址列複製連結'; }
+    });
+  </script>
+</Base>
