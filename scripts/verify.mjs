@@ -62,5 +62,11 @@ try {
   const archive = load(await fs.readFile(path.join(dist, 'archive/index.html'), 'utf8'));
   if (feed('item').length !== archive('[data-post-row]').length) failures.push('RSS article count differs');
 } catch { failures.push('RSS feed is missing'); }
+try {
+  const robots = await fs.readFile(path.join(dist, 'robots.txt'), 'utf8');
+  const sitemapUrl = new URL(robots.match(/^Sitemap:\s*(\S+)/m)[1]);
+  if (sitemapUrl.pathname !== `${base}/sitemap-index.xml`) failures.push('robots.txt sitemap escapes the repository base');
+  await fs.access(path.join(dist, sitemapUrl.pathname.slice(base.length)));
+} catch { failures.push('robots.txt sitemap target is missing'); }
 if (failures.length) { console.error(failures.join('\n')); process.exitCode = 1; }
-else console.log(`PASS: ${urls.length} original URLs${migrationAudit ? ' and article texts' : ''}, ${htmlFiles.length} HTML pages, ${checked.size} local link targets, ${assets.length} saved assets, RSS.`);
+else console.log(`PASS: ${urls.length} original URLs${migrationAudit ? ' and article texts' : ''}, ${htmlFiles.length} HTML pages, ${checked.size} local link targets, ${assets.length} saved assets, RSS, robots sitemap.`);
